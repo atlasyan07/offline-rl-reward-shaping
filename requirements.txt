@@ -1,0 +1,11 @@
+minigrid==3.0.0
+numpy
+matplotlib
+imageio
+imageio-ffmpeg
+pillow
+tqdm
+PyYAML
+pandas
+tensorboard
+torch

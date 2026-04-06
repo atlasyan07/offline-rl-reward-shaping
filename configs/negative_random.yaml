@@ -1,0 +1,89 @@
+# Negative dataset: ONLY exploratory + random behaviors, low success target
+# For AIRL negative examples
+
+project: offline-rl-reward-shaping
+seed: 123  # Different seed from expert
+output_dir: outputs/negative_random
+
+env:
+  min_rooms: 4
+  max_rooms: 6
+  max_room_size: 6
+  max_steps: 50  # SHORT - most episodes will fail/timeout
+  # envs_harder.py only has room 2 (top-right) as goal region
+  lava:
+    enabled: false  # Lava defined in layouts
+    tiles_per_room: [0, 0]
+  doors:
+    open_prob: 1.0
+    locked_prob: 0.0
+    closed_prob: 0.0
+
+planner:
+  algorithm: astar
+  max_nodes: 30000
+  heuristic_scale_range: [0.5, 2.0]  # Wide/noisy range
+  allow_lava: true  # Random behavior may stumble into lava
+  max_time_s: 1.0
+
+costs:
+  step: 1.0
+  turn: 0.2
+  toggle: 2.0
+  lava_penalty: 5.0  # Low penalty - more likely to take risky paths
+  noise_std: 2.0  # High noise in cost estimation
+
+dataset:
+  min_episodes: 1
+  min_transitions: 50000
+  avg_steps_target: [20, 50]  # Will mostly timeout
+  max_env_attempts: 25
+  workers: 16
+
+  fixed_layouts_train:
+    - train_easy
+    - train_medium
+    - train_hard
+    - eval_harder
+    - eval_hardest
+  fixed_layouts_eval: []
+
+  # ONLY bad behaviors - exploratory and random
+  fixed_behavior_order:
+    - exploratory
+    - random_walk
+
+  episodes_per_behavior: 50
+
+behaviors:
+  # Exploratory: ~20-30% success (from realistic config)
+  exploratory:
+    random_action_prob: 0.70  # 70% random actions
+    heuristic_noise: 1.2
+    cost_noise_std: 2.0
+
+  # Pure random walk: ~5-10% success (pure chance)
+  random_walk:
+    random_action_prob: 0.95  # Almost entirely random
+    heuristic_noise: 2.0
+    cost_noise_std: 3.0
+
+# Expected success rate: ~15-20% (mostly wandering/failing)
+
+episode_videos:
+  enabled: true
+  max_episodes: 10
+  fps: 10
+
+videos:
+  enabled: false
+
+plots:
+  enabled: true
+
+checkpoint:
+  enabled: false
+
+paths:
+  enabled: true
+  max_episodes: 10

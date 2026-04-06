@@ -1,0 +1,80 @@
+# Clean expert dataset: ONLY near_optimal behavior, 100% success target
+# For AIRL positive examples
+
+project: offline-rl-reward-shaping
+seed: 42
+output_dir: outputs/expert_clean
+
+env:
+  min_rooms: 4
+  max_rooms: 6
+  max_room_size: 6
+  max_steps: 200  # HIGH - ensure all episodes succeed
+  # envs_harder.py only has room 2 (top-right) as goal region
+  lava:
+    enabled: false
+    tiles_per_room: [0, 0]
+  doors:
+    open_prob: 1.0
+    locked_prob: 0.0
+    closed_prob: 0.0
+
+planner:
+  algorithm: astar
+  max_nodes: 60000  # High to ensure path finding
+  heuristic_scale_range: [0.9, 1.1]  # Tight range for optimal paths
+  allow_lava: true  # Allow lava in path search, but high penalty makes expert avoid it
+  max_time_s: 2.0
+
+costs:
+  step: 1.0
+  turn: 0.2
+  toggle: 2.0
+  lava_penalty: 100.0  # Avoid lava completely
+  noise_std: 0.0
+
+dataset:
+  min_episodes: 1
+  min_transitions: 50000
+  avg_steps_target: [20, 100]  # Wide range, high max
+  max_env_attempts: 50
+  workers: 16
+
+  fixed_layouts_train:
+    - train_easy
+    - train_medium
+    - train_hard
+    - eval_harder
+    - eval_hardest
+  fixed_layouts_eval: []
+
+  # ONLY near_optimal - pure expert behavior
+  fixed_behavior_order:
+    - near_optimal
+
+  episodes_per_behavior: 50  # Many episodes per layout
+
+behaviors:
+  # Pure optimal: Should succeed 100%
+  near_optimal:
+    random_action_prob: 0.0  # NO random actions
+    heuristic_noise: 0.0     # NO noise
+    cost_noise_std: 0.0      # NO cost noise
+
+episode_videos:
+  enabled: true
+  max_episodes: 10
+  fps: 10
+
+videos:
+  enabled: false
+
+plots:
+  enabled: true
+
+checkpoint:
+  enabled: false
+
+paths:
+  enabled: true
+  max_episodes: 10

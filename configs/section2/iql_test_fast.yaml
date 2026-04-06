@@ -1,0 +1,44 @@
+# Quick test config for 1-2 minute smoke runs.
+project: offline-rl-reward-shaping
+experiment: section2-iql-fast-test
+output_dir: outputs/section2_iql_fast_test
+
+grid_channels: 3
+num_actions: 7
+
+feature_dim: 256
+hidden_dim: 256
+
+discount: 0.99
+tau: 0.6
+beta: 3.0
+learning_rate: 3e-4
+target_update_freq: 2
+polyak_tau: 0.005
+
+# Regularization
+rnd_alpha: 0.0
+rnd_output_dim: 128
+use_target_encoder: true
+use_dr3: true
+dr3_alpha: 0.1
+dr3_eps: 1e-4
+
+# Potential-based shaping: r_total = r_env + shaping_alpha * (gamma*h(s')-h(s))
+shaping_alpha: 0.1
+
+# Fast test controls
+batch_size: 256
+num_epochs: 10
+steps_per_epoch: 100
+eval_freq: 1
+save_freq: 1
+rep_dashboard_every: 1
+rep_max_points: 256
+
+dataloader_workers: 4
+prefetch_factor: 2
+persistent_workers: true
+pin_memory: true
+
+device: cuda

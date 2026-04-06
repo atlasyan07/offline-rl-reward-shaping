@@ -1,0 +1,142 @@
+project: offline-rl-reward-shaping
+seed: 42
+output_dir: outputs/behavior_collection
+
+env:
+  min_rooms: 4
+  max_rooms: 6
+  max_room_size: 6
+  max_steps: 500  # Allow exploratory agents time to wander and still solve
+  lava:
+    enabled: false
+    tiles_per_room: [0, 0]
+  doors:
+    open_prob: 1.0
+    locked_prob: 0.0
+    closed_prob: 0.0
+
+planner:
+  algorithm: astar
+  max_nodes: 60000
+  heuristic_scale_range: [0.9, 1.2]
+  allow_lava: true
+  max_time_s: 2.0
+
+costs:
+  step: 1.0
+  turn: 0.2
+  toggle: 2.0
+  lava_penalty: 10.0
+  noise_std: 0.0
+
+dataset:
+  min_episodes: 1250
+  min_transitions: 200000  # Section 1 target: ≥200k transitions
+  avg_steps_target: [50, 400]  # Wide range for different behavior types
+  max_env_attempts: 25
+  workers: 1  # Must be 1 for systematic ordering
+
+  # USE ALL 5 LAYOUTS for training data generation
+  # Evaluation will use held-out seeds, not held-out layouts
+  fixed_layouts_train:
+    - train_easy
+    - train_medium
+    - train_hard
+    - eval_harder      # Include for data generation
+    - eval_hardest     # Include for data generation
+  # No held-out layouts - evaluation via held-out seeds instead
+  fixed_layouts_eval: []
+
+  # SYSTEMATIC BEHAVIOR ORDER
+  # For each layout, compute all behaviors in this exact order:
+  # 1. near_optimal -> 2. suboptimal_minor -> 3. suboptimal_major -> 4. noisy -> 5. exploratory
+  fixed_behavior_order:
+    - near_optimal
+    - suboptimal_minor
+    - suboptimal_major
+    - noisy
+    - exploratory
+
+  # Episodes per behavior per layout
+  # Target: 200k transitions
+  # Calculation: 5 layouts × 5 behaviors × 50 episodes × ~160 steps/ep = 200k transitions
+  episodes_per_behavior: 50
+  # Total: 5 layouts × 5 behaviors × 50 episodes = 1,250 episodes
+  # Expected transitions: ~160-200k (at ~128-160 steps/episode average)
+  #
+  # Diversity achieved:
+  # - Some optimal paths hit lava (failure)
+  # - Some suboptimal paths avoid lava (success)
+  # - K=5 goal regions per layout (~10 episodes per region per behavior)
+  # - All layouts contribute to training data
+
+# Five behavior types with distinct characteristics
+behaviors:
+  # 1. NEAR-OPTIMAL (Expert/Optimal)
+  # - Perfect execution, no mistakes
+  # - Takes optimal path every time
+  # - Baseline for comparison
+  near_optimal:
+    random_action_prob: 0.0
+    heuristic_noise: 0.0
+    cost_noise_std: 0.0
+
+  # 2. SUBOPTIMAL MINOR (Small mistakes, still in optimal family)
+  # - Takes slightly longer paths
+  # - Occasionally chooses suboptimal fork
+  # - Minor backtracking
+  # - Still relatively efficient
+  suboptimal_minor:
+    random_action_prob: 0.20
+    heuristic_noise: 0.2
+    cost_noise_std: 0.5
+
+  # 3. SUBOPTIMAL MAJOR (Bigger mistakes, takes long way)
+  # - Deliberately takes longer paths
+  # - Often chooses wrong fork then has to go around
+  # - Some circling and backtracking
+  # - Less efficient but still coherent
+  suboptimal_major:
+    random_action_prob: 0.35
+    heuristic_noise: 0.6
+    cost_noise_std: 1.0
+
+  # 4. NOISY (Makes dumb choices sometimes)
+  # - Sometimes goes backward when should go forward
+  # - Random poor decisions
+  # - Inconsistent behavior
+  # - Not exploratory, just makes mistakes
+  noisy:
+    random_action_prob: 0.45
+    heuristic_noise: 0.9
+    cost_noise_std: 1.3
+
+  # 5. EXPLORATORY (Curiosity-driven, explores rooms)
+  # - Takes detours to explore rooms
+  # - Sometimes wanders away from goal
+  # - Explores both fork branches
+  # - Random exploration behavior
+  # - Still eventually solves
+  exploratory:
+    random_action_prob: 0.55
+    heuristic_noise: 1.2
+    cost_noise_std: 1.5
+
+# Video settings - save episodes to visualize behavior differences
+episode_videos:
+  enabled: true
+  max_episodes: 100  # First 100 episodes (20 per layout: 4×5 behaviors for 5 layouts)
+  fps: 10
+
+# Example videos for each behavior type
+videos:
+  enabled: true
+  fps: 10
+  max_steps: 500
+
+plots:
+  enabled: true
+
+paths:
+  enabled: true
+  max_episodes: 15  # Path overlays for first 15 episodes (5 per train layout)

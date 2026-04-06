@@ -1,0 +1,122 @@
+project: offline-rl-reward-shaping
+seed: 42
+output_dir: outputs/episodic_systematic
+
+env:
+  min_rooms: 4
+  max_rooms: 6
+  max_room_size: 6
+  max_steps: 500  # Increased to allow exploratory agent to eventually solve despite circles/backtracking
+  lava:
+    enabled: false
+    tiles_per_room: [0, 0]
+  doors:
+    open_prob: 1.0
+    locked_prob: 0.0
+    closed_prob: 0.0
+
+planner:
+  algorithm: astar
+  max_nodes: 60000
+  heuristic_scale_range: [0.9, 1.2]
+  allow_lava: true
+  max_time_s: 2.0
+
+costs:
+  step: 1.0
+  turn: 0.2
+  toggle: 2.0
+  lava_penalty: 10.0
+  noise_std: 0.0
+
+dataset:
+  min_episodes: 100
+  min_transitions: 10000
+  avg_steps_target: [50, 400]  # Increased upper bound to allow exploratory episodes to complete
+  max_env_attempts: 25
+  workers: 1  # Must be 1 for fixed behavior order
+
+  # Fixed layouts - all 5 structured environments
+  fixed_layouts_train:
+    - train_easy
+    - train_medium
+    - train_hard
+  fixed_layouts_eval:
+    - eval_harder
+    - eval_hardest
+
+  # Systematic behavior order - cycle through all behavior types
+  # This creates a predictable pattern:
+  # Layout 1: near_optimal, noisy, suboptimal, exploratory (repeat 5 times = 20 episodes)
+  # Layout 2: near_optimal, noisy, suboptimal, exploratory (repeat 5 times = 20 episodes)
+  # etc.
+  fixed_behavior_order:
+    - near_optimal
+    - noisy
+    - suboptimal
+    - exploratory
+
+  episodes_per_behavior: 5  # 5 episodes per behavior type per layout
+
+  # This will be ignored when fixed_behavior_order is set
+  planner_mix:
+    near_optimal: 0.25
+    noisy: 0.25
+    suboptimal: 0.25
+    exploratory: 0.25
+
+# Four behavior levels for systematic comparison
+behaviors:
+  # Level 1: Expert/Optimal
+  # - No mistakes, perfect execution
+  # - Takes optimal path every time
+  near_optimal:
+    random_action_prob: 0.0
+    heuristic_noise: 0.0
+    cost_noise_std: 0.0
+
+  # Level 2: Noisy Expert
+  # - Occasional small mistakes (wrong turn, then corrects)
+  # - Mostly follows good path with minor detours
+  noisy:
+    random_action_prob: 0.20
+    heuristic_noise: 0.15
+    cost_noise_std: 0.4
+
+  # Level 3: Suboptimal (Makes Real Mistakes)
+  # - Takes long way around
+  # - Goes in circles sometimes
+  # - Backtracks and explores wrong corridors
+  # - May choose wrong fork then have to go around
+  suboptimal:
+    random_action_prob: 0.35
+    heuristic_noise: 0.8
+    cost_noise_std: 1.2
+
+  # Level 4: Highly Exploratory (Lots of Mistakes)
+  # - Frequent circles and backtracking
+  # - Explores both forks before committing
+  # - Takes very inefficient paths
+  # - Heavy wandering behavior
+  exploratory:
+    random_action_prob: 0.50
+    heuristic_noise: 1.2
+    cost_noise_std: 1.5
+
+# Save videos to visually compare behavior types
+episode_videos:
+  enabled: true
+  max_episodes: 40  # 2 episodes per behavior per layout (40 total for 5 layouts × 4 behaviors × 2)
+  fps: 10
+
+videos:
+  enabled: true
+  fps: 10
+  max_steps: 300
+
+plots:
+  enabled: true
+
+paths:
+  enabled: true
+  max_episodes: 20  # Show path overlays for first 4 behaviors × 5 layouts

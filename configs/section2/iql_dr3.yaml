@@ -1,0 +1,40 @@
+# Section 2 Part 2: IQL + DR3
+# Add DR3 regularization to prevent representation collapse
+# Should help but not fully solve the problem (still needs reward shaping)
+
+project: offline-rl-reward-shaping
+experiment: section2-iql-dr3
+output_dir: outputs/section2_iql_dr3
+
+# Model architecture
+grid_channels: 3
+num_actions: 7
+
+feature_dim: 256
+hidden_dim: 256
+
+# IQL hyperparameters (same as baseline for fair comparison)
+discount: 0.99
+tau: 0.7
+beta: 3.0
+learning_rate: 3e-4
+target_update_freq: 2
+
+# DR3 hyperparameters
+dr3_eps: 1e-4     # Regularization for numerical stability
+dr3_alpha: 1e-3   # Weight for DR3 loss (keep small per Section 2)
+
+# Training
+batch_size: 256
+num_epochs: 100
+eval_freq: 10
+save_freq: 10
+
+# Device
+device: cuda
+
+# Notes:
+# - DR3 prevents rank collapse by encouraging high-rank features
+# - dr3_alpha=1.0: Moderate regularization strength
+# - Should improve over baseline but still struggle with sparse reward
+# - Motivates need for Section 3 (Offline IRL for reward learning)

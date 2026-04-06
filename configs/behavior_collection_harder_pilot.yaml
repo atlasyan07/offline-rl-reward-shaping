@@ -1,0 +1,93 @@
+project: offline-rl-reward-shaping
+seed: 42
+output_dir: outputs/behavior_collection_harder_pilot
+
+env:
+  min_rooms: 4
+  max_rooms: 6
+  max_room_size: 6
+  max_steps: 600
+  lava:
+    enabled: false
+    tiles_per_room: [0, 0]
+  doors:
+    open_prob: 1.0
+    locked_prob: 0.0
+    closed_prob: 0.0
+
+planner:
+  algorithm: astar
+  max_nodes: 60000
+  heuristic_scale_range: [0.8, 1.4]
+  allow_lava: true
+  max_time_s: 2.0
+
+costs:
+  step: 1.0
+  turn: 0.2
+  toggle: 2.0
+  lava_penalty: 30.0
+  noise_std: 0.0
+
+dataset:
+  min_episodes: 1
+  min_transitions: 200
+  avg_steps_target: [80, 500]
+  max_env_attempts: 25
+  workers: 1
+
+  fixed_layouts_train:
+    - train_easy
+    - train_medium
+    - train_hard
+    - eval_harder
+    - eval_hardest
+  fixed_layouts_eval: []
+
+  fixed_behavior_order:
+    - near_optimal
+    - suboptimal_minor
+    - suboptimal_major
+    - noisy
+    - exploratory
+
+  episodes_per_behavior: 1
+
+behaviors:
+  near_optimal:
+    random_action_prob: 0.0
+    heuristic_noise: 0.0
+    cost_noise_std: 0.0
+  suboptimal_minor:
+    random_action_prob: 0.35
+    heuristic_noise: 0.5
+    cost_noise_std: 1.0
+  suboptimal_major:
+    random_action_prob: 0.55
+    heuristic_noise: 1.0
+    cost_noise_std: 1.6
+  noisy:
+    random_action_prob: 0.70
+    heuristic_noise: 1.4
+    cost_noise_std: 2.0
+  exploratory:
+    random_action_prob: 0.80
+    heuristic_noise: 1.7
+    cost_noise_std: 2.5
+
+episode_videos:
+  enabled: true
+  max_episodes: 25
+  fps: 10
+
+videos:
+  enabled: true
+  fps: 10
+  max_steps: 600
+
+plots:
+  enabled: true
+
+paths:
+  enabled: true
+  max_episodes: 15

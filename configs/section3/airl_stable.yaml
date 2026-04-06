@@ -1,0 +1,64 @@
+project: offline-rl-reward-shaping
+seed: 42
+device: cuda
+policy: ppo
+
+output_dir: outputs/section3_airl_stable
+
+# Expert dataset (balanced) for AIRL reward learning
+expert_dataset: outputs/room2_expert_from_discriminator/expert_dataset.npz
+env_config: configs/behavior_collection_realistic.yaml
+layouts:
+  - train_easy
+  - train_medium
+  - train_hard
+  - eval_harder
+  - eval_hardest
+
+model:
+  grid_channels: 3
+  num_actions: 7
+  feature_dim: 256
+  hidden_dim: 256
+
+airl:
+  gamma: 0.9
+  lr: 1e-4
+  iterations: 200
+  batch_size: 1024
+  save_every: 10
+  heatmap_every: 10
+  state_only_reward: false
+  disc_updates_per_iter: 1
+  ppo_warmup_iters: 5
+  use_logsumexp: true
+  disc_grad_penalty: 0.1
+  disc_grad_penalty_eps: 1e-12
+  goal_batch_ratio: 0.1
+  near_terminal_steps: 0
+  near_terminal_weight: 0.0
+  policy_reward: proxy
+  replay_buffer_iters: 5
+  reward_reg_lambda: 0.0
+  g_clip: 5.0
+  policy_freeze_iters: 0
+  grad_clip: 1.0
+
+ppo:
+  lr: 1e-4
+  rollout_steps: 2048
+  max_steps: 200
+  clip_ratio: 0.2
+  value_coef: 0.5
+  entropy_coef: 0.02
+  gae_lambda: 0.95
+  updates_per_iter: 2
+  minibatches: 4
+  grad_clip: 0.5
+
+heatmap_layouts:
+  - train_easy
+  - train_medium
+  - train_hard
+  - eval_harder
+  - eval_hardest

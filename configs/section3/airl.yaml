@@ -1,0 +1,83 @@
+project: offline-rl-reward-shaping
+
+output_dir: outputs/section3_airl_balanced_dataset
+device: cuda
+policy: sac
+
+# Extracted positives-only expert dataset from discriminator build
+expert_dataset: outputs/room2_expert_from_discriminator/expert_dataset.npz
+env_config: configs/behavior_collection_realistic.yaml
+layouts:
+  - train_easy
+  - train_medium
+  - train_hard
+  - eval_harder
+  - eval_hardest
+
+model:
+  grid_channels: 3
+  num_actions: 7
+  feature_dim: 256
+  hidden_dim: 256
+
+airl:
+  gamma: 0.9
+  lr: 5e-5
+  iterations: 200
+  batch_size: 2048
+  save_every: 10
+  heatmap_every: 10
+  log_every: 10
+  # Use action-dependent reward for better discrimination
+  state_only_reward: false
+  # 1:1 discriminator to policy updates per paper - they alternate
+  disc_updates_per_iter: 1
+  # Warmup discriminator before PPO updates
+  ppo_warmup_iters: 2
+  # Use logsumexp form for discriminator stability
+  use_logsumexp: true
+  # Gradient penalty on discriminator
+  disc_grad_penalty: 1.0
+  disc_grad_penalty_eps: 1e-12
+  # Balance goal vs non-goal transitions inside discriminator batches
+  goal_batch_ratio: 0.0
+  # Upweight near-terminal transitions for discriminator loss
+  near_terminal_steps: 5
+  near_terminal_weight: 2.0
+  # Policy reward source: proxy | g | f
+  policy_reward: proxy
+  # Replay buffer: store samples from last N iterations for diverse negatives (Fu et al. 2018)
+  replay_buffer_iters: 0
+  # Pure AIRL - h(s) will be used for potential-based shaping at IQL time
+  # r_total = r_env + alpha * (gamma * h(s') - h(s))
+  # This formulation is provably safe against reward hacking
+  reward_reg_lambda: 0.0  # Pure AIRL (no reward regression anchor)
+  reward_reg_near_terminal_steps: 5
+  g_clip: null
+  policy_freeze_iters: 20
+
+ppo:
+  lr: 1e-4  # Lower than discriminator to prevent catching up too fast
+  rollout_steps: 2048
+  max_steps: 200
+  clip_ratio: 0.2
+  value_coef: 0.5
+  entropy_coef: 0.1  # Keep policy diverse for stable reward learning
+  gae_lambda: 0.95
+
+sac:
+  lr: 3e-4
+  alpha: 0.5
+  target_tau: 0.005
+  replay_size: 50000
+  batch_size: 256
+  min_buffer_size: 4096
+  updates_per_iter: 4
+  actor_updates_encoder: false
+
+heatmap_layouts:
+  - train_easy
+  - train_medium
+  - train_hard
+  - eval_harder
+  - eval_hardest

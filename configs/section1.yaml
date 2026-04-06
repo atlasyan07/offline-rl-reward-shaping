@@ -1,0 +1,81 @@
+project: offline-rl-reward-shaping
+seed: 123
+output_dir: outputs/section1
+
+env:
+  min_rooms: 4
+  max_rooms: 6
+  max_room_size: 6
+  max_steps: null
+  lava:
+    enabled: false
+    tiles_per_room: [0, 0]
+  doors:
+    open_prob: 1.0
+    locked_prob: 0.0
+    closed_prob: 0.0
+
+planner:
+  algorithm: astar
+  max_nodes: 60000
+  heuristic_scale_range: [0.9, 1.2]
+  allow_lava: true
+  max_time_s: 2.0
+
+costs:
+  step: 1.0
+  turn: 0.2
+  toggle: 2.0
+  lava_penalty: 10.0
+  noise_std: 0.0
+
+dataset:
+  min_episodes: 1000
+  min_transitions: 100000
+  avg_steps_target: [50, 150]
+  max_env_attempts: 25
+  workers: 14
+  episodes_per_worker: 2
+  episodes_per_behavior: 120
+  planner_mix:
+    near_optimal: 0.4
+    noisy: 0.3
+    suboptimal: 0.3
+  fixed_behavior_order:
+    - near_optimal
+    - noisy
+    - suboptimal
+  fixed_layouts_train:
+    - train_easy
+    - train_medium
+    - train_hard
+  fixed_layouts_eval:
+    - eval_harder
+    - eval_hardest
+  episodes_per_layout: 200
+
+behaviors:
+  near_optimal:
+    random_action_prob: 0.0
+    heuristic_noise: 0.0
+    cost_noise_std: 0.0
+  noisy:
+    random_action_prob: 0.15
+    heuristic_noise: 0.1
+    cost_noise_std: 0.3
+  suboptimal:
+    random_action_prob: 0.05
+    heuristic_noise: 0.3
+    cost_noise_std: 0.5
+
+videos:
+  enabled: true
+  fps: 10
+  max_steps: 200
+
+plots:
+  enabled: true
+
+paths:
+  enabled: true
+  max_episodes: 6

@@ -1,0 +1,54 @@
+# Section 2 Part 1: IQL Baseline (No DR3)
+# Train on sparse environment reward only
+# Expected to struggle - motivates reward shaping
+
+project: offline-rl-reward-shaping
+experiment: section2-iql-baseline
+output_dir: outputs/section2_iql_baseline
+
+# Model architecture
+grid_channels: 3
+num_actions: 7  # MiniGrid: left, right, forward, pickup, drop, toggle, done
+
+feature_dim: 256
+hidden_dim: 256
+
+# IQL hyperparameters
+discount: 0.99
+tau: 0.6          # Expectile for V-learning (0.7 = upper expectile, focuses on best actions)
+beta: 3.0         # Temperature for advantage-weighted BC (higher = more uniform)
+learning_rate: 3e-4
+target_update_freq: 2
+polyak_tau: 0.005
+rnd_alpha: 0.0
+rnd_output_dim: 128
+use_target_encoder: true
+use_dr3: true
+dr3_alpha: 0.01
+dr3_eps: 1e-4
+
+# Potential-based reward shaping: r_total = r_env + shaping_alpha * (gamma * h(s') - h(s))
+# This is provably safe - the shaping telescopes, so agent can't exploit it
+# Must still reach goal to maximize reward
+shaping_alpha: 0.1
+
+# Training
+batch_size: 256
+num_epochs: 100
+eval_freq: 10
+save_freq: 10
+dataloader_workers: 12
+prefetch_factor: 2
+persistent_workers: true
+pin_memory: true
+rep_dashboard_every: 10
+training_dashboard_every: 10
+rep_max_points: 512
+
+# Device
+device: cuda  # or "cpu"
+
+# Notes:
+# - tau=0.7: V fits upper expectile of Q(s,a), avoiding need for max over unseen actions
+# - No DR3: Baseline should exhibit representation collapse
+# - Sparse reward only: r=+1 at goal, 0 elsewhere (no shaping yet)
